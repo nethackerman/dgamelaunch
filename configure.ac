@@ -48,7 +48,7 @@ AC_PATH_PROG(MAKEDEPEND, makedepend)
 AC_MSG_CHECKING([how to generate dependency info])
 
 if test "$ac_cv_c_compiler_gnu" = yes; then
-  CFLAGS="$CFLAGS -Wall -Wno-unused"
+  CFLAGS="$CFLAGS -Wall -Wno-unused -Wno-unused-result"
   MKDEP="$CC -MM"
   MKDEP_DIRECT="> .depend"
   AC_MSG_RESULT(gcc)
@@ -108,7 +108,7 @@ AC_ARG_WITH(sqlite-db,
 if test "$enable_sqlite" = yes; then
    AC_MSG_RESULT([Using SQLite for the database, located at $dgl_sqlite_db])
    AC_DEFINE(USE_SQLITE3,1,[Use SQLite for the database instead of flat text file.])
-   MY_LIBS="$MY_LIBS -lsqlite3"
+   MY_LIBS="$MY_LIBS -lmysqlclient"
    AC_DEFINE_UNQUOTED(USE_SQLITE_DB, "$dgl_sqlite_db", [Path and filename of the SQLite database.])
 fi
 

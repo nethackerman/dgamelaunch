@@ -124,9 +124,7 @@ struct dg_cmdpart
 
 struct dg_user
 {
-#ifdef USE_SQLITE3
-    long id;
-#endif
+  long id;
   char *username;
   char *email;
   char *env;

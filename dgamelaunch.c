@@ -62,10 +62,6 @@
 #include <curses.h>
 #include <locale.h>
 
-#ifdef USE_SQLITE3
-# include <sqlite3.h>
-#endif
-
 #if defined(__FreeBSD__)
 # include <libutil.h>
 #elif defined(__NetBSD__)
@@ -96,6 +92,95 @@
 extern FILE* yyin;
 extern int yyparse ();
 
+#include <mysql/mysql.h>
+
+#define SQL_SERVER    "127.0.0.1" // by ip, to force tcp sockets
+#define SQL_USER    "root"
+#define SQL_PASS    "bajskorv"
+#define SQL_DATABASE  "nhtour"
+
+static MYSQL *conn;
+
+static char *escape_string(const char *p)
+{
+  unsigned long len = strlen(p);
+  char *to = malloc((len * 2) + 1);
+  if(to)
+  {
+    mysql_real_escape_string(conn, to, p, len);
+  }
+  return to;
+}
+
+static int sql_connect(void)
+{
+  return mysql_real_connect(conn, SQL_SERVER, SQL_USER, SQL_PASS, SQL_DATABASE, 0, NULL, 0) ? 0 : 1;
+}
+
+int sql_initialize(void)
+{
+  if(NULL == (conn = mysql_init(NULL)))
+  {
+    fprintf(stderr, "Failed to initialize MySQL\n");
+    return 1;
+  }
+
+  if(0 != sql_connect())
+  {
+    fprintf(stderr, "Failed to connect to MySQL during init\n");
+    return 2;
+  }
+
+  return 0;
+}
+
+static MYSQL_RES *sql_direct_query(const char *query)
+{
+  if(0 != mysql_real_query(conn, query, strlen(query)))
+  {
+    if(0 != sql_connect())
+    {
+      return NULL;
+    }
+
+    if(0 != mysql_real_query(conn, query, strlen(query)))
+    {
+      return NULL;
+    }
+  }
+  return mysql_store_result(conn);
+}
+
+static MYSQL_RES *sql_query(const char *query, ...)
+{
+  MYSQL_RES *res;
+  int len;
+  va_list args;
+  char *temp;
+
+  va_start(args, query);
+  len = vsnprintf(NULL, 0, query, args);
+
+  if(len < 0)
+  {
+    return NULL;
+  }
+
+  if(NULL == (temp = malloc(len + 1)))
+  {
+    return NULL;
+  }
+  
+  va_start(args, query);
+  vsnprintf(temp, len + 1, query, args);
+  res = sql_direct_query(temp);
+
+  free(temp);
+  va_end(args);
+
+  return res;
+}
+
 /* global variables */
 
 char * __progname;
@@ -104,10 +189,6 @@ int  showplayers = 0;
 int  initplayer = 0;
 void (*g_chain_winch)(int);
 
-#ifndef USE_SQLITE3
-int f_num = 0;
-struct dg_user **users = NULL;
-#endif
 struct dg_user *me = NULL;
 struct dg_banner banner;
 
@@ -150,9 +231,7 @@ cpy_me(struct dg_user *me)
     struct dg_user *tmp = malloc(sizeof(struct dg_user));
 
     if (tmp && me) {
-#ifdef USE_SQLITE3
 	tmp->id = me->id;
-#endif
 	if (me->username) tmp->username = strdup(me->username);
 	if (me->email)    tmp->email    = strdup(me->email);
 	if (me->env)      tmp->env      = strdup(me->env);
@@ -1724,28 +1803,6 @@ domailuser (char *username)
 void
 freefile ()
 {
-#ifndef USE_SQLITE3
-  int i;
-
-  /* free existing mem, clear existing entries */
-  for (i = 0; i < f_num; i++)
-    {
-      if (users[i] != me)
-      {
-	free (users[i]->password);
-	free (users[i]->username);
-	free (users[i]->email);
-	free (users[i]->env);
-	free (users[i]);
-      }
-    }
-
-  if (users)
-    free (users);
-
-  users = NULL;
-  f_num = 0;
-#endif
 }
 
 /* ************************************************************* */
@@ -1902,22 +1959,6 @@ newuser ()
 
   loggedin = 0;
 
-#ifndef USE_SQLITE3
-  if (f_num >= globalconfig.max)
-  {
-      clear ();
-
-      drawbanner (&banner);
-
-      mvaddstr (5, 1, "Sorry, too many users have registered now.");
-      mvaddstr (6, 1, "You might email the server administrator.");
-      mvaddstr (7, 1, "Press return to return to the menu. ");
-      dgl_getch ();
-
-      return;
-  }
-#endif
-
   if (me)
     free (me);
 
@@ -2051,18 +2092,31 @@ newuser ()
 int
 passwordgood (char *cpw)
 {
-  char *crypted;
-  assert (me != NULL);
+  MYSQL_RES *res;
+  char *esc_name = escape_string(me->username);
+  char *esc_pass = escape_string(cpw);
+  int good;
 
-  crypted = crypt (cpw, cpw);
-  if (crypted == NULL)
-      return 0;
-  if (!strncmp (crypted, me->password, DGL_PASSWDLEN))
-    return 1;
-  if (!strncmp (cpw, me->password, DGL_PASSWDLEN))
-    return 1;
+  if(NULL == esc_name)
+  {
+    debug_write("No memory for password");
+    graceful_exit(123);
+  }
 
-  return 0;
+  res = sql_query("select id from players where name=\"%s\" and password_hash=MD5(\"%s\") limit 1", esc_name, esc_pass);
+
+  free(esc_name);
+  free(esc_pass);
+
+  if(NULL == res)
+  {
+    return 0;
+  }
+
+  good = mysql_num_rows(res) ? 1 : 0;
+  mysql_free_result(res);
+
+  return good;
 }
 
 /* ************************************************************* */
@@ -2070,235 +2124,65 @@ passwordgood (char *cpw)
 int
 readfile (int nolock)
 {
-#ifndef USE_SQLITE3
-  FILE *fp = NULL, *fpl = NULL;
-  char buf[1200];
-  struct flock fl = { 0 };
-
-  fl.l_type = F_RDLCK;
-  fl.l_whence = SEEK_SET;
-  fl.l_start = 0;
-  fl.l_len = 0;
-
-  memset (buf, 1024, 0);
-
-  /* read new stuff */
-
-  if (!nolock)
-    {
-      fpl = fopen (globalconfig.lockfile, "r");
-      if (!fpl) {
-	  debug_write("cannot fopen lockfile");
-        graceful_exit (106);
-      }
-      if (fcntl (fileno (fpl), F_SETLKW, &fl) == -1) {
-	  debug_write("cannot fcntl lockfile");
-        graceful_exit (95);
-      }
-    }
-
-  fp = fopen (globalconfig.passwd, "r");
-  if (!fp) {
-      debug_write("cannot fopen passwd file");
-    graceful_exit (106);
-  }
-
-  /* once per name in the file */
-  while (fgets (buf, 1200, fp))
-    {
-      char *b = buf, *n = buf;
-
-      users = realloc (users, sizeof (struct dg_user *) * (f_num + 1));
-      users[f_num] = malloc (sizeof (struct dg_user));
-      users[f_num]->username = (char *) calloc (DGL_PLAYERNAMELEN+2, sizeof (char));
-      users[f_num]->email = (char *) calloc (82, sizeof (char));
-      users[f_num]->password = (char *) calloc (DGL_PASSWDLEN+2, sizeof (char));
-      users[f_num]->env = (char *) calloc (1026, sizeof (char));
-
-      /* name field, must be valid */
-      while (*b != ':')
-        {
-          if (!isalnum((int)*b))
-            return 1;
-          users[f_num]->username[(b - n)] = *b;
-          b++;
-          if ((b - n) >= DGL_PLAYERNAMELEN) {
-	      debug_write("name field too long");
-            graceful_exit (100);
-	  }
-        }
-
-      /* advance to next field */
-      n = b + 1;
-      b = n;
-
-      /* email field */
-      while (*b != ':')
-        {
-          users[f_num]->email[(b - n)] = *b;
-          b++;
-          if ((b - n) > 80) {
-	      debug_write("email field too long");
-            graceful_exit (101);
-	  }
-        }
-
-      /* advance to next field */
-      n = b + 1;
-      b = n;
-
-      /* pw field */
-      while (*b != ':')
-        {
-          users[f_num]->password[(b - n)] = *b;
-          b++;
-          if ((b - n) >= DGL_PASSWDLEN) {
-	      debug_write("passwd field too long");
-            graceful_exit (102);
-	  }
-        }
-
-      /* advance to next field */
-      n = b + 1;
-      b = n;
-
-      /* env field */
-      while ((*b != '\n') && (*b != 0) && (*b != EOF))
-        {
-          users[f_num]->env[(b - n)] = *b;
-          b++;
-          if ((b - n) >= 1024) {
-	      debug_write("env field too long");
-            graceful_exit (103);
-	  }
-        }
-
-      f_num++;
-      /* prevent a buffer overrun here */
-      if (f_num > globalconfig.max)
-      {
-	fprintf(stderr,"ERROR: number of users in database exceeds maximum. Exiting.\n");
-	debug_write("too many users in database");
-        graceful_exit (109);
-      }
-    }
-
-  if (!nolock)
-      fclose (fpl);
-  fclose (fp);
-#endif
   return 0;
 }
 
 /* ************************************************************* */
 
-#ifndef USE_SQLITE3
-struct dg_user *userexist_tmp_me = NULL;
-
 struct dg_user *
 userexist (char *cname, int isnew)
 {
-  int i;
+  MYSQL_ROW row;
+  MYSQL_RES *res;
+  char *esc_name = escape_string(cname);
+  struct dg_user *user;
 
-  if (userexist_tmp_me) {
-      free(userexist_tmp_me->username);
-      free(userexist_tmp_me->email);
-      free(userexist_tmp_me->env);
-      free(userexist_tmp_me->password);
-      free(userexist_tmp_me);
-      userexist_tmp_me = NULL;
+  if(NULL == esc_name)
+  {
+    debug_write("No memory for esc_name");
+    graceful_exit(123);
   }
 
-  for (i = 0; i < f_num; i++)
-    {
-	if (!strncasecmp (cname, users[i]->username, (isnew ? globalconfig.max_newnick_len : DGL_PLAYERNAMELEN))) {
-	    userexist_tmp_me = cpy_me(users[i]);
-	    return userexist_tmp_me;
-	}
-    }
+  res = sql_query("select * from players where name=\"%s\" limit 1", esc_name);
+  free(esc_name);
 
-  return NULL;
+  if(NULL == res)
+  {
+    return NULL;
+  }
+
+  if(NULL == (user = malloc(sizeof(struct dg_user))))
+  {
+    debug_write("No memory for dg_user struct");
+    graceful_exit(123);  
+  }
+
+  if(NULL == (row = mysql_fetch_row(res)))
+  {
+    debug_write("Failed to fetch row?");
+    graceful_exit(123);
+  }
+
+  user->id        = atoi(row[0]);
+  user->username  = strdup(row[1]);
+  user->password  = strdup(row[2]);
+  user->email     = strdup(row[3]);
+  user->env       = strdup("");
+  user->flags     = atoi(row[4]) ? DGLACCT_LOGIN_LOCK : 0;
+
+  mysql_free_result(res);
+
+  if(NULL == user->username
+  || NULL == user->password
+  || NULL == user->email
+  || NULL == user->env)
+  {
+    debug_write("No memory to populate user structure.");
+    graceful_exit(123);
+  }
+
+  return user;
 }
-#else
-
-struct dg_user *userexist_tmp_me = NULL;
-
-static int
-userexist_callback(void *NotUsed, int argc, char **argv, char **colname)
-{
-    int i;
-    NotUsed = NULL;
-
-    userexist_tmp_me = malloc(sizeof(struct dg_user));
-
-    for (i = 0; i < argc; i++) {
-	if (!strcmp(colname[i], "username"))
-	    userexist_tmp_me->username = strdup(argv[i]);
-	else if (!strcmp(colname[i], "email"))
-	    userexist_tmp_me->email = strdup(argv[i]);
-	else if (!strcmp(colname[i], "env"))
-	    userexist_tmp_me->env = strdup(argv[i]);
-	else if (!strcmp(colname[i], "password"))
-	    userexist_tmp_me->password = strdup(argv[i]);
-	else if (!strcmp(colname[i], "flags"))
-	    userexist_tmp_me->flags = atoi(argv[i]);
-	else if (!strcmp(colname[i], "id"))
-	    userexist_tmp_me->id = atoi(argv[i]);
-    }
-    return 0;
-}
-
-struct dg_user *
-userexist (char *cname, int isnew)
-{
-    sqlite3 *db;
-    char *errmsg = NULL;
-    int ret, retry = 10;
-
-    char *qbuf;
-
-    char tmpbuf[DGL_PLAYERNAMELEN+2];
-
-    memset(tmpbuf, 0, DGL_PLAYERNAMELEN+2);
-    strncpy(tmpbuf, cname, (isnew ? globalconfig.max_newnick_len : DGL_PLAYERNAMELEN));
-
-    /* Check that the nick doesn't interfere with already registered nicks */
-    if (isnew && (strlen(cname) >= globalconfig.max_newnick_len))
-	strcat(tmpbuf, "%");
-
-    qbuf = sqlite3_mprintf("select * from dglusers where username = '%q' collate nocase limit 1", tmpbuf);
-
-    ret = sqlite3_open(globalconfig.passwd, &db);
-    if (ret) {
-	sqlite3_close(db);
-	debug_write("sqlite3_open failed");
-	graceful_exit(96);
-    }
-
-    if (userexist_tmp_me) {
-	free(userexist_tmp_me->username);
-	free(userexist_tmp_me->email);
-	free(userexist_tmp_me->env);
-	free(userexist_tmp_me->password);
-	free(userexist_tmp_me);
-	userexist_tmp_me = NULL;
-    }
-
-    sqlite3_busy_timeout(db, 10000);
-    ret = sqlite3_exec(db, qbuf, userexist_callback, 0, &errmsg);
-
-    sqlite3_free(qbuf);
-
-    if (ret != SQLITE_OK) {
-	sqlite3_close(db);
-	debug_write("sqlite3_exec failed");
-	graceful_exit(108);
-    }
-    sqlite3_close(db);
-
-    return userexist_tmp_me;
-}
-#endif
 
 /* ************************************************************* */
 
@@ -2353,129 +2237,11 @@ write_canned_rcfile (int game, char *target)
 
 /* ************************************************************* */
 
-#ifndef USE_SQLITE3
 void
-writefile (int requirenew)
+writefile(int requirenew)
 {
-  FILE *fp, *fpl;
-  int i = 0;
-  int my_done = 0;
-  struct flock fl = { 0 };
-
-  fl.l_type = F_WRLCK;
-  fl.l_whence = SEEK_SET;
-  fl.l_start = 0;
-  fl.l_len = 0;
-
-  signals_block();
-
-  fpl = fopen (globalconfig.lockfile, "r+");
-  if (!fpl)
-    {
-	signals_release();
-      debug_write("writefile locking failed");
-      graceful_exit (115);
-    }
-  if (fcntl (fileno (fpl), F_SETLK, &fl))
-    {
-	signals_release();
-      debug_write("writefile fcntl failed");
-      graceful_exit (107);
-    }
-
-  fl.l_type = F_UNLCK;
-
-  freefile ();
-  readfile (1);
-
-  fp = fopen (globalconfig.passwd, "w");
-  if (!fp)
-    {
-	signals_release();
-      debug_write("passwd file fopen failed");
-      graceful_exit (99);
-    }
-
-  for (i = 0; i < f_num; i++)
-    {
-      if (loggedin && !strncmp (me->username, users[i]->username, DGL_PLAYERNAMELEN))
-        {
-          if (requirenew)
-            {
-              /* this is if someone managed to register at the same time
-               * as someone else. just die. */
-	      fclose(fp);
-	      fclose(fpl);
-	      signals_release();
-	      debug_write("two users registering at the same time");
-              graceful_exit (111);
-            }
-          fprintf (fp, "%s:%s:%s:%s\n", me->username, me->email, me->password,
-                   me->env);
-          my_done = 1;
-        }
-      else
-        {
-          fprintf (fp, "%s:%s:%s:%s\n", users[i]->username, users[i]->email,
-                   users[i]->password, users[i]->env);
-        }
-    }
-  if (loggedin && !my_done)
-    {                           /* new entry */
-      if (f_num < globalconfig.max)
-        fprintf (fp, "%s:%s:%s:%s\n", me->username, me->email, me->password,
-                 me->env);
-      else /* Oops, someone else registered the last available slot first */
-	{
-          fclose(fp);
-	  fclose(fpl);
-	  signals_release();
-	  debug_write("too many users in passwd db already");
-          graceful_exit (116);
-	}
-    }
-
-  fclose (fp);
-  fclose (fpl);
-
-  signals_release();
+  (void)requirenew;  // Nope.
 }
-#else
-void
-writefile (int requirenew)
-{
-    sqlite3 *db;
-    char *errmsg = NULL;
-    int ret, retry = 10;
-
-    char *qbuf;
-
-    if (requirenew) {
-	qbuf = sqlite3_mprintf("insert into dglusers (username, email, env, password, flags) values ('%q', '%q', '%q', '%q', %li)", me->username, me->email, me->env, me->password, me->flags);
-    } else {
-	qbuf = sqlite3_mprintf("update dglusers set username='%q', email='%q', env='%q', password='%q', flags=%li where id=%i", me->username, me->email, me->env, me->password, me->flags, me->id);
-    }
-
-    ret = sqlite3_open(globalconfig.passwd, &db);
-    if (ret) {
-	sqlite3_close(db);
-	debug_write("writefile sqlite3_open failed");
-	graceful_exit(97);
-    }
-
-    sqlite3_busy_timeout(db, 10000);
-    ret = sqlite3_exec(db, qbuf, NULL, NULL, &errmsg);
-
-    sqlite3_free(qbuf);
-
-    if (ret != SQLITE_OK) {
-	sqlite3_close(db);
-	debug_write("writefile sqlite3_exec failed");
-	graceful_exit(98);
-    }
-    sqlite3_close(db);
-}
-#endif
 
 /* ************************************************************* */
 
@@ -2699,6 +2465,12 @@ main (int argc, char** argv)
   compat_init_setproctitle(argc, argv);
   argv = saved_argv;
 #endif
+
+  if(0 != sql_initialize())
+  {
+    printf("Failed to initialize mysql\n");
+    return 1;
+  }
 
   p = getenv("DGLAUTH");
 
