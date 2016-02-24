@@ -164,16 +164,19 @@ ttyplay_keyboard_action(int c)
 
     case 'm':
         tcgetattr (0, &t);
+        initcurses();
+#ifdef REQUIRE_LOGIN_FOR_MAIL // Set if exploited ;)
         if (!loggedin)
         {
-            initcurses();
             loginprompt(1);
         }
         if (loggedin)
         {
-            initcurses ();
-            domailuser (chosen_name);
+            domailuser(chosen_name);
         }
+#else
+        domailuser(chosen_name);
+#endif
         endwin ();
         tcsetattr (0, TCSANOW, &t);
         return READ_RESTART;

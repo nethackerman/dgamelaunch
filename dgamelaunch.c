@@ -101,13 +101,25 @@ extern int yyparse ();
 
 static MYSQL *conn;
 
-static char *escape_string(const char *p)
+static char *make_string(const char *p)
 {
-  unsigned long len = strlen(p);
-  char *to = malloc((len * 2) + 1);
-  if(to)
+  unsigned long len;
+  char *to;
+
+  if(NULL == p)
   {
-    mysql_real_escape_string(conn, to, p, len);
+    return strdup("NULL");
+  }
+
+  len = strlen(p);
+
+  if(NULL != (to = malloc((len * 2) + 2 + 1)))
+  {
+    *to = '"';
+    mysql_real_escape_string(conn, to + 1, p, len);
+    len = strlen(to);
+    to[len] = '"';
+    to[len + 1] = 0;
   }
   return to;
 }
@@ -181,6 +193,64 @@ static MYSQL_RES *sql_query(const char *query, ...)
   return res;
 }
 
+static unsigned int sql_get_player_id(const char *player)
+{
+  unsigned int id = 0;
+  MYSQL_RES *res;
+  char *esc_player = make_string(player);
+
+  if(NULL == esc_player)
+  {
+    return 0;
+  }
+
+  if(NULL != (res = sql_query("select id from players where name=%s limit 1", esc_player)))
+  {
+    MYSQL_ROW row;
+
+    if(NULL != (row = mysql_fetch_row(res)))
+    {
+      id = atoi(row[0]);
+    }
+
+    mysql_free_result(res);
+  }
+
+  free(esc_player);
+  return id;
+}
+
+static int sql_insert_mail(const char *from, const char *to, const char *message)
+{
+  unsigned int to_id = sql_get_player_id(to);
+  char *esc_from;
+  char *esc_message;
+
+  debug_write((char *)from);
+  debug_write((char *)to);
+  debug_write((char *)message);
+
+  if(0 == to_id)
+  {
+    debug_write("Destination id doesnt exist? wtf?");
+    return 1;
+  }
+
+  if(NULL == (esc_from = make_string(from))
+  || NULL == (esc_message = make_string(message)))
+  {
+    debug_write("Out of memory allocating mail data");
+    graceful_exit(123);
+  }
+
+  sql_query("insert into mails values(0, %d, %s, %s, FALSE, NOW())",
+    to_id, esc_from, esc_message);
+
+  free(esc_from);
+  free(esc_message);
+
+  return 0;
+}
 /* global variables */
 
 char * __progname;
@@ -1702,28 +1772,9 @@ void
 domailuser (char *username)
 {
   unsigned int len, i;
-  char *spool_fn, message[DGL_MAILMSGLEN+1];
-  FILE *user_spool = NULL;
-  time_t now;
+  char message[DGL_MAILMSGLEN+1];
+  const char *from_name;
   int mail_empty = 1;
-  int game;
-  struct flock fl = { 0 };
-
-  fl.l_type = F_WRLCK;
-  fl.l_whence = SEEK_SET;
-  fl.l_start = 0;
-  fl.l_len = 0;
-
-  assert (loggedin);
-
-  game = 0; /*TODO: find_curr_player_game(username) */
-
-  if (strlen(myconfig[game]->spool) < 1) return;
-
-  len = strlen(myconfig[game]->spool) + strlen (username) + 1;
-  spool_fn = malloc (len + 1);
-  time (&now);
-  snprintf (spool_fn, len + 1, "%s/%s", myconfig[game]->spool, username);
 
   /* print the enter your message line */
   clear ();
@@ -1738,8 +1789,10 @@ domailuser (char *username)
 
   for (i = 0; i < strlen (message); i++)
     {
-      if (message[i] != ' ' && message[i] != '\n' && message[i] != '\t')
+      if (message[i] != ' ' && message[i] != '\n' && message[i] != '\t') {
         mail_empty = 0;
+        break;
+      }
     }
 
   if (mail_empty)
@@ -1751,48 +1804,28 @@ domailuser (char *username)
       return;
     }
 
-  if ((user_spool = fopen (spool_fn, "a")) == NULL)
+    if(NULL == me || NULL == me->username)
     {
-      mvaddstr (9, 1,
-                "You fall into the water!  You sink like a rock.");
-      mvprintw (10, 1,
-                "(Couldn't open %s'%c spool file.  Aborting.)",
-                username, (username[strlen (username) - 1] != 's') ? 's' : 0);
+      from_name = "a secret admirer";
+    }
+    else
+    {
+      from_name = me->username;
+    }
+
+    if(0 != sql_insert_mail(from_name, username, message))
+    {
+      mvaddstr (9, 1, "SQL shat itself <.<.");
+      mvaddstr (10, 1, "(Aborting your message.)");
       mvaddstr (12, 1, "--More--");
       dgl_getch ();
       return;
     }
 
-  mvaddstr (9, 1, "Sending your scroll...");
-  refresh ();
-
-  /* Getting a lock on the mailspool... */
-  while (fcntl (fileno (user_spool), F_SETLK, &fl) == -1)
-    {
-      if (errno != EAGAIN)
-        {
-          mvaddstr (10, 1,
-                    "(Received a weird error from fcntl.  Aborting.)");
-	  mvaddstr (12, 1, "--More--");
-          dgl_getch ();
-          return;
-        }
-      sleep (1);
-    }
-
-  fprintf (user_spool, "%s:%s\n", me->username, message);
-
-  /* 
-   * Don't unlock the file ourselves, this way it will be done automatically
-   * after all data has been written. (Using file locking with stdio is icky.)
-   */
-
-  fclose (user_spool);
-
-  mvaddstr (9, 1, "Scroll delivered!         ");
-  move(9, 19); /* Pedantry! */
-  refresh ();
-  sleep (2);
+  clear ();
+  mvaddstr (1, 1, "Scroll delivered!");
+  mvaddstr (2, 1, "--More--");
+  dgl_getch();
 
   return;
 }
@@ -2093,17 +2126,17 @@ int
 passwordgood (char *cpw)
 {
   MYSQL_RES *res;
-  char *esc_name = escape_string(me->username);
-  char *esc_pass = escape_string(cpw);
+  char *esc_name = make_string(me->username);
+  char *esc_pass = make_string(cpw);
   int good;
 
-  if(NULL == esc_name)
+  if(NULL == esc_name || NULL == esc_pass)
   {
     debug_write("No memory for password");
     graceful_exit(123);
   }
 
-  res = sql_query("select id from players where name=\"%s\" and password_hash=MD5(\"%s\") limit 1", esc_name, esc_pass);
+  res = sql_query("select id from players where name=%s and password_hash=MD5(%s) limit 1", esc_name, esc_pass);
 
   free(esc_name);
   free(esc_pass);
@@ -2134,7 +2167,7 @@ userexist (char *cname, int isnew)
 {
   MYSQL_ROW row;
   MYSQL_RES *res;
-  char *esc_name = escape_string(cname);
+  char *esc_name = make_string(cname);
   struct dg_user *user;
 
   if(NULL == esc_name)
@@ -2143,7 +2176,7 @@ userexist (char *cname, int isnew)
     graceful_exit(123);
   }
 
-  res = sql_query("select * from players where name=\"%s\" limit 1", esc_name);
+  res = sql_query("select * from players where name=%s limit 1", esc_name);
   free(esc_name);
 
   if(NULL == res)
@@ -2159,7 +2192,7 @@ userexist (char *cname, int isnew)
 
   if(NULL == (row = mysql_fetch_row(res)))
   {
-    debug_write("Failed to fetch row?");
+    debug_write(esc_name);
     graceful_exit(123);
   }
 

@@ -8,11 +8,10 @@
 
  Logged in as: $USERNAME
 
- c) Change password
- e) Change email address
  w) Watch games in progress
  o) Edit options
- p) Play NetHack 3.4.3
+ 1) Play NetHack 3.6.0
+ 2) Play Nethack 3.6.0 (Wizard mode)
  q) Quit
 
  =>
