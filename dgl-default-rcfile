@@ -1,11 +1,16 @@
+OPTIONS=fruit:slime mold
+OPTIONS=catname:katten
+OPTIONS=dogname:hunden
+OPTIONS=horsename:hest
+OPTIONS=number_pad:0
+
+
+
 ## Conducts
 #OPTIONS=nudist
 #OPTIONS=blind
 
-OPTIONS=number_pad:0
-
 OPTIONS=autopickup,pickup_types=$
-
 
 ## Auto
 OPTIONS=autodig

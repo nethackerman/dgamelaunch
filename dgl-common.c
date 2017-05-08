@@ -42,7 +42,7 @@ struct dg_config defconfig = {
 };
 
 char* config = NULL;
-int silent = 0;
+int silent = 1;
 int loggedin = 0;
 char *chosen_name;
 int num_games = 0;
@@ -217,6 +217,7 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
     char *p1;
     char *p2;
     int played = 0;
+    char asshole[123];
 
     if (!queue) return 1;
 
@@ -231,6 +232,9 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	if (tmp->param1) strcpy(p1, dgl_format_str(game, me, tmp->param1, NULL));
 	if (tmp->param2) strcpy(p2, dgl_format_str(game, me, tmp->param2, NULL));
 
+	sprintf(asshole, "CMD: %d", tmp->cmd);
+    debug_write(asshole);
+
 	switch (tmp->cmd) {
 	default: break;
 	case DGLCMD_RAWPRINT:
@@ -240,7 +244,16 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	    if (p1 && (access(p1, F_OK) != 0)) mkdir(p1, 0755);
 	    break;
 	case DGLCMD_UNLINK:
-	    if (p1 && (access(p1, F_OK) == 0)) unlink(p1);
+
+	    if (p1)
+	    {
+	    	debug_write(p1);
+	    	if(access(p1, F_OK) == 0)
+	    	{
+	    		debug_write("Committing to unlink!");
+	    		unlink(p1);
+	    	}
+	    }
 	    break;
 	case DGLCMD_CHDIR:
 	    if (p1) {
@@ -262,6 +275,8 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	    /* else fall through to cp */
 	case DGLCMD_CP:
 	    if (p1 && p2) {
+		debug_write(p1);
+		debug_write(p2);
 		FILE *cannedf, *newfile;
 		char buf[1024];
 		size_t bytes;
@@ -290,7 +305,6 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 		myargv[0] = p1;
 		myargv[1] = p2;
 		myargv[2] = 0;
-
 		clear();
 		refresh();
 		endwin();
@@ -311,7 +325,12 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	    }
 	    break;
 	case DGLCMD_SETENV:
-	    if (p1 && p2) mysetenv(p1, p2, 1);
+	    if (p1 && p2)
+	    {
+	    	debug_write(p1);
+	    	debug_write(p2);
+	    	mysetenv(p1, p2, 1);
+	    }
 	    break;
 	case DGLCMD_CHPASSWD:
 	    if (loggedin) changepw(1);

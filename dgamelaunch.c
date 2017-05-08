@@ -96,7 +96,7 @@ extern int yyparse ();
 
 #define SQL_SERVER    "127.0.0.1" // by ip, to force tcp sockets
 #define SQL_USER    "root"
-#define SQL_PASS    "bajskorv"
+#define SQL_PASS    ""
 #define SQL_DATABASE  "nhtour"
 
 static MYSQL *conn;
@@ -2291,9 +2291,9 @@ purge_stale_locks (int game)
 
   if (!(pdir = opendir (dir))) {
       debug_write("purge_stale_locks dir open failed");
+      debug_write(myconfig[game]->inprogressdir);
     graceful_exit (200);
   }
-
   free(dir);
 
   while ((dent = readdir (pdir)) != NULL)

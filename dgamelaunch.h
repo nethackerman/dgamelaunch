@@ -57,24 +57,24 @@ typedef enum
 typedef enum
 {
     DGLCMD_NONE = 0,
-    DGLCMD_RAWPRINT,	/* rawprint "foo" */
-    DGLCMD_MKDIR,	/* mkdir foo */
-    DGLCMD_CHDIR,	/* chdir foo */
-    DGLCMD_IF_NX_CP,	/* ifnxcp foo bar */
-    DGLCMD_CP,		/* cp foo bar */
-    DGLCMD_UNLINK,	/* unlink foo */
-    DGLCMD_EXEC,	/* exec foo bar */
-    DGLCMD_SETENV,	/* setenv foo bar */
-    DGLCMD_WATCH_MENU,  /* watch_menu */
-    DGLCMD_LOGIN,       /* ask_login */
-    DGLCMD_REGISTER,	/* ask_register */
-    DGLCMD_QUIT,	/* quit */
-    DGLCMD_CHMAIL,	/* chmail */
-    DGLCMD_CHPASSWD,	/* chpasswd */
-    DGLCMD_PLAYGAME,	/* play_game "foo" */
-    DGLCMD_PLAY_IF_EXIST,	/* play_if_exist "game" "file" */
-    DGLCMD_SUBMENU,	/* submenu "foo" */
-    DGLCMD_RETURN	/* return */
+    DGLCMD_RAWPRINT,	/* rawprint "foo" 1 */
+    DGLCMD_MKDIR,	/* mkdir foo 2 */
+    DGLCMD_CHDIR,	/* chdir foo 3 */
+    DGLCMD_IF_NX_CP,	/* ifnxcp foo bar 4 */
+    DGLCMD_CP,		/* cp foo bar 5 */
+    DGLCMD_UNLINK,	/* unlink foo 6 */
+    DGLCMD_EXEC,	/* exec foo bar 7 */
+    DGLCMD_SETENV,	/* setenv foo bar 8 */
+    DGLCMD_WATCH_MENU,  /* watch_menu 9 */
+    DGLCMD_LOGIN,       /* ask_login 10 */
+    DGLCMD_REGISTER,	/* ask_register 11 */
+    DGLCMD_QUIT,	/* quit 12 */
+    DGLCMD_CHMAIL,	/* chmail 13 */
+    DGLCMD_CHPASSWD,	/* chpasswd 14 */
+    DGLCMD_PLAYGAME,	/* play_game "foo" 15 */
+    DGLCMD_PLAY_IF_EXIST,	/* play_if_exist "game" "file" 16 */
+    DGLCMD_SUBMENU,	/* submenu "foo" 17 */
+    DGLCMD_RETURN	/* return 18 */
 } dglcmd_actions;
 
 typedef enum

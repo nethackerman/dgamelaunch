@@ -1,10 +1,10 @@
- ## $SERVERID
- ##
- ## $VERSION - network console game launcher
- ## Copyright (c) 2000-2010 The Dgamelaunch Team
- ## See http://nethackwiki.com/wiki/dgamelaunch for more info
- ##
- ## Games on this server are recorded for in-progress viewing and playback!
+
+
+| \| | __|_   _| || | /_\ / __| |/ /  /_\_   _| || |/ _ \| \| |_  )  \/ |__  |
+| .` | _|  | | | __ |/ _ \ (__| ' <  / _ \| | | __ | (_) | .` |/ / () | | / / 
+|_|\_|___| |_| |_||_/_/ \_\___|_|\_\/_/ \_\_| |_||_|\___/|_|\_/___\__/|_|/_/  
+
+
 
  Not logged in.
 

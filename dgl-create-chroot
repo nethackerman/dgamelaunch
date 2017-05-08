@@ -84,7 +84,7 @@ DGLFILE="dgamelaunch.`date +%Y%m%d`"
 
 echo "Setting up chroot in $CHROOT"
 
-LIBS="`findlibs dgamelaunch`"
+LIBS="`findlibs dgamelaunch /usr/bin/nano`"
 
 mkdir -p "$CHROOT" || errorexit "Cannot create chroot"
 cd "$CHROOT"
@@ -92,6 +92,9 @@ mkdir dgldir etc lib mail usr bin
 chown "$USRGRP" dgldir mail
 cp "$CURDIR/dgamelaunch" "$DGLFILE"
 ln -s "$DGLFILE" dgamelaunch
+
+cp "/usr/bin/nano" "$CHROOT/bin"
+chown "$USRGRP" "$CHROOT/bin/nano"
 
 mkdir -p "$CHROOT/dgldir/inprogress-nh360"
 mkdir -p "$CHROOT/dgldir/inprogress-wz360"
