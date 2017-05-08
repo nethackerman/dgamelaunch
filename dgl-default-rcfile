@@ -70,7 +70,7 @@ MENUCOLOR=" pager"=white
 MENUCOLOR=" pager named [0-9]+ unread messages"=purple
 MENUCOLOR=" pager named [0-9]+ unread messages\."=purple&underline
 MENUCOLOR=" pager named [0-9]+ unread messages!"=red&underline
-
+MENUCOLOR=" Wrath of Demogorgon "=red&inverse
 
 ## Messagetypes
 #
