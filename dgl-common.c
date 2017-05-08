@@ -217,7 +217,6 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
     char *p1;
     char *p2;
     int played = 0;
-    char asshole[123];
 
     if (!queue) return 1;
 
@@ -232,9 +231,6 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	if (tmp->param1) strcpy(p1, dgl_format_str(game, me, tmp->param1, NULL));
 	if (tmp->param2) strcpy(p2, dgl_format_str(game, me, tmp->param2, NULL));
 
-	sprintf(asshole, "CMD: %d", tmp->cmd);
-    debug_write(asshole);
-
 	switch (tmp->cmd) {
 	default: break;
 	case DGLCMD_RAWPRINT:
@@ -247,7 +243,6 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 
 	    if (p1)
 	    {
-	    	debug_write(p1);
 	    	if(access(p1, F_OK) == 0)
 	    	{
 	    		debug_write("Committing to unlink!");
@@ -275,8 +270,6 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	    /* else fall through to cp */
 	case DGLCMD_CP:
 	    if (p1 && p2) {
-		debug_write(p1);
-		debug_write(p2);
 		FILE *cannedf, *newfile;
 		char buf[1024];
 		size_t bytes;
@@ -327,8 +320,6 @@ dgl_exec_cmdqueue(struct dg_cmdpart *queue, int game, struct dg_user *me)
 	case DGLCMD_SETENV:
 	    if (p1 && p2)
 	    {
-	    	debug_write(p1);
-	    	debug_write(p2);
 	    	mysetenv(p1, p2, 1);
 	    }
 	    break;
