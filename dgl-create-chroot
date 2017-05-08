@@ -11,8 +11,9 @@
 
 # Same as chroot_path in dgl config file
 CHROOT="$HOME/nethack_server"
+rm -fr $CHROOT
 # the user & group from dgamelaunch config file.
-USRGRP="$USER:$USER"
+USRGRP="$USER:users"
 # COMPRESS from include/config.h; the compression binary to copy. leave blank to skip.
 COMPRESSBIN="/bin/gzip"
 # nethack binary to copy into chroot (leave blank to skip)
@@ -93,8 +94,10 @@ cp "$CURDIR/dgamelaunch" "$DGLFILE"
 ln -s "$DGLFILE" dgamelaunch
 
 mkdir -p "$CHROOT/dgldir/inprogress-nh360"
+mkdir -p "$CHROOT/dgldir/inprogress-wz360"
 mkdir -p "$CHROOT/dgldir/userdata"
 chown "$USRGRP" "$CHROOT/dgldir/inprogress-nh360"
+chown "$USRGRP" "$CHROOT/dgldir/inprogress-wz360"
 chown "$USRGRP" "$CHROOT/dgldir/userdata"
 
 
@@ -147,7 +150,8 @@ cp "$CURDIR/examples/dgl_menu_main_user.txt" .
 cp "$CURDIR/examples/dgl_menu_watchmenu_help.txt" .
 cp "$CURDIR/examples/dgl-banner" .
 cp "$CURDIR/dgl-default-rcfile" "dgl-default-rcfile.nh360"
-chmod go+r dgl_menu_main_anon.txt dgl_menu_main_user.txt dgl-banner dgl-default-rcfile.nh360
+cp "$CURDIR/dgl-default-rcfile" "dgl-default-rcfile.wz360"
+chmod go+r dgl_menu_main_anon.txt dgl_menu_main_user.txt dgl-banner dgl-default-rcfile.nh360 dgl-default-rcfile.wz360
 
 NHSUBDIR="`echo ${NHSUBDIR%/}`"
 NHSUBDIR="`echo ${NHSUBDIR#/}`"

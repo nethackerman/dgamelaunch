@@ -1,19 +1,83 @@
-# This is an example nethackrc file. You should edit this to suit the needs
-# of your personal nethack build and add some reasonable default options
-# for your users.
+## Conducts
+#OPTIONS=nudist
+#OPTIONS=blind
 
-# If you compiled dgamelaunch with the `vi' editor enabled instead of ee,
-# perhaps a helpful blurb such as this might help:
+OPTIONS=number_pad:0
 
-# This editor is vi-like. Type ESC a couple times, then ':q!' (without quotes)
-# to exit if you get stuck. To save, hit ESC and then ZZ or type ':wq'
-# (without quotes.) To insert text, hit 'i' to enter insert mode.
+OPTIONS=autopickup,pickup_types=$
 
-# Here are some examples of reasonable defaults:
 
-OPTIONS=showexp,showscore,time,color,!autopickup
-OPTIONS=autodig,fruit:slime mold,boulder:0
+## Auto
+OPTIONS=autodig
+OPTIONS=autoopen
+OPTIONS=autoquiver
 
-# For more information on what you can set in your nethackrc file, refer to:
-#   http://www.nethack.org/v343/Guidebook.html#_TOCentry_42
-# Happy hacking!
+## Allow saving and loading bones files.
+OPTIONS=bones
+
+## Show out-of-sight areas of lit rooms
+OPTIONS=dark_room
+
+## Use inverse for pets
+OPTIONS=hilite_pet
+
+## Use inverse for piles of items
+OPTIONS=hilite_pile
+
+## asdfsadf
+OPTIONS=hilite_status:power/50%/red/green hitpoints/50%/red/green
+## How recalled messages (ctrl-p) are displayed.
+OPTIONS=msg_window:reversed
+
+## Crap
+OPTIONS=!cmdassist, !implicit_uncursed, !mention_walls
+OPTIONS=acoustics, lit_corridor, pickup_thrown, mail, menu_objsyms, standout
+
+## Colors
+OPTIONS=color
+
+## use IBMgraphics or DECgraphics
+#OPTIONS=symset:DECgraphics
+#OPTIONS=symset:IBMgraphics
+
+## Change symbols
+#SYMBOLS=S_ghost:X
+
+## Sort items by name. One of "none", "loot", or "full"
+#OPTIONS=sortloot:full
+
+## Require explicit yes for some prompts
+#OPTIONS=paranoid_confirmation:Confirm quit attack pray wand Remove
+
+OPTIONS=statushilites
+
+## Colored menus. Regular expressions allowed.
+#
+OPTIONS=menucolors
+MENUCOLOR=" blessed "=green
+MENUCOLOR=" holy "=green
+MENUCOLOR=" cursed "=red
+MENUCOLOR=" unholy "=red
+MENUCOLOR=" cursed .* \(being worn\)"=orange&underline
+MENUCOLOR=" uncursed "=yellow
+MENUCOLOR=" warpstone .*" =cyan
+MENUCOLOR=" pager"=white
+MENUCOLOR=" pager named [0-9]+ unread messages"=purple
+MENUCOLOR=" pager named [0-9]+ unread messages\."=purple&underline
+MENUCOLOR=" pager named [0-9]+ unread messages!"=red&underline
+
+
+## Messagetypes
+#
+## displacing pets. hide the message.
+#MSGTYPE=hide "You swap places with your .*"
+## items on floor. don't repeat the message.
+#MSGTYPE=norep "You see here a .*"
+#MSGTYPE=norep "You see here an .*"
+## delayed instadeaths. always prompt for -more-
+#MSGTYPE=stop "You are slowing down."
+#MSGTYPE=stop "You find it hard to breathe."
+#MSGTYPE=stop "You are turning a little .*"
+## moving up or down stairs
+#MSGTYPE=hide "You descend .*"
+#MSGTYPE=hide "You (climb|fly) (up|down) .*"
