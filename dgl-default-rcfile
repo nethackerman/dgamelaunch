@@ -47,6 +47,7 @@ OPTIONS=color
 
 ## Change symbols
 #SYMBOLS=S_ghost:X
+OPTIONS=boulder:0
 
 ## Sort items by name. One of "none", "loot", or "full"
 #OPTIONS=sortloot:full
