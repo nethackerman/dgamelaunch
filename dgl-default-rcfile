@@ -29,8 +29,6 @@ OPTIONS=hilite_pet
 ## Use inverse for piles of items
 OPTIONS=hilite_pile
 
-## asdfsadf
-OPTIONS=hilite_status:power/50%/red/green hitpoints/50%/red/green
 ## How recalled messages (ctrl-p) are displayed.
 OPTIONS=msg_window:reversed
 
@@ -48,14 +46,13 @@ OPTIONS=color
 ## Change symbols
 #SYMBOLS=S_ghost:X
 OPTIONS=boulder:0
+OPTIONS=time
 
 ## Sort items by name. One of "none", "loot", or "full"
 #OPTIONS=sortloot:full
 
 ## Require explicit yes for some prompts
 #OPTIONS=paranoid_confirmation:Confirm quit attack pray wand Remove
-
-OPTIONS=statushilites
 
 ## Colored menus. Regular expressions allowed.
 #
@@ -73,17 +70,37 @@ MENUCOLOR=" pager named [0-9]+ unread messages\."=purple&underline
 MENUCOLOR=" pager named [0-9]+ unread messages!"=red&underline
 MENUCOLOR=" Wrath of Demogorgon "=red&inverse
 
-## Messagetypes
+
+## Use status hilites
 #
-## displacing pets. hide the message.
-#MSGTYPE=hide "You swap places with your .*"
-## items on floor. don't repeat the message.
-#MSGTYPE=norep "You see here a .*"
-#MSGTYPE=norep "You see here an .*"
-## delayed instadeaths. always prompt for -more-
-#MSGTYPE=stop "You are slowing down."
-#MSGTYPE=stop "You find it hard to breathe."
-#MSGTYPE=stop "You are turning a little .*"
-## moving up or down stairs
-#MSGTYPE=hide "You descend .*"
-#MSGTYPE=hide "You (climb|fly) (up|down) .*"
+OPTIONS=statushilites
+# HP
+OPTIONS=hitpointbar
+OPTIONS=hilite_status:hitpoints/100%/grey&normal
+OPTIONS=hilite_status:hitpoints/<100%/green&normal
+OPTIONS=hilite_status:hitpoints/<66%/yellow&normal
+OPTIONS=hilite_status:hitpoints/<50%/orange&normal
+OPTIONS=hilite_status:hitpoints/<33%/red&bold
+OPTIONS=hilite_status:hitpoints/<15%/red&inverse
+## Pw
+OPTIONS=hilite_status:power/100%/grey&normal
+OPTIONS=hilite_status:power/<100%/green&normal
+OPTIONS=hilite_status:power/<66%/yellow&normal
+OPTIONS=hilite_status:power/<50%/orange&normal
+OPTIONS=hilite_status:power/<33%/red&bold
+## Carry
+OPTIONS=hilite_status:cap/burdened/yellow/stressed/orange/strained/red&bold/overtaxed/red&inverse/overloaded/red&inverse&blink
+## Hunger
+OPTIONS=hilite_status:hunger/satiated/yellow/hungry/orange/weak/red&bold/fainting/red&inverse/fainted/red&inverse&blink
+## Mental
+OPTIONS=hilite_status:condition/hallu/yellow
+OPTIONS=hilite_status:condition/conf/orange
+OPTIONS=hilite_status:condition/stun/red&bold
+## Health
+OPTIONS=hilite_status:condition/termill/red&inverse
+OPTIONS=hilite_status:condition/foodpois/red&inverse
+OPTIONS=hilite_status:condition/slime/red&inverse
+# Str, Con, Dex, Int, Wis, Cha
+OPTIONS=hilite_status:characteristics/up/green/down/red
+# gold
+OPTIONS=hilite_status: gold/up/yellow/down/brown

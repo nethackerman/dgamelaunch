@@ -231,11 +231,10 @@ menu["mainmenu_user"] {
 #  commands["string_of_keys"] = <commandlist>
 # for example, you could use commands["qQ"] = quit
         commands["w"] = watch_menu
-        commands["o"] = ifnxcp "/dgl-default-rcfile.nh361" "%ruserdata/%n/%n.nh361rc",
-		        exec "/bin/nano" "%ruserdata/%n/%n.nh361rc"
-        commands["1"] = play_game "NH361"
-        commands["2"] = play_game "WZ361"
-        commands["x"] = play_game "HOF"
+        commands["o"] = ifnxcp "/dgl-default-rcfile.nh360" "%ruserdata/%n/%n.nh360rc",
+		        exec "/bin/nano" "%ruserdata/%n/%n.nh360rc"
+        commands["1"] = play_game "NH360"
+        commands["2"] = play_game "WZ360"
         commands["q"] = quit
 }
 
@@ -316,18 +315,18 @@ menu["watchmenu_help"] {
 #
 
 DEFINE {
-  game_path = "/nh361/nethack"
-  game_name = "NetHack 3.6.1"
-  short_name = "NH361"
+  game_path = "/nh360/nethack"
+  game_name = "NetHack 3.6.0"
+  short_name = "NH360"
 
-  game_args = "/nh361/nethack", "-u", "%n"
+  game_args = "/nh360/nethack", "-u", "%n"
 
   spooldir = "/mail/"
-  rc_template = "/dgl-default-rcfile.nh361"
+  rc_template = "/dgl-default-rcfile.nh360"
 
-  rc_fmt = "%ruserdata/%n/%n.nh361rc"
+  rc_fmt = "%ruserdata/%n/%n.nh360rc"
 
-  inprogressdir = "%rinprogress-nh361/"
+  inprogressdir = "%rinprogress-nh360/"
 
 # The place where ttyrecs are stored for this game.
 # If this is not defined, ttyrecs are not saved for this game.
@@ -336,9 +335,9 @@ DEFINE {
 
 
   # back up savefile
-  commands = cp "/nh361/var/save/%u%n.gz" "/nh361/var/save/%u%n.gz.bak",
+  commands = cp "/nh360/var/save/%u%n.gz" "/nh360/var/save/%u%n.gz.bak",
   # set NETHACKOPTIONS to point to the rcfile
-             setenv "NETHACKOPTIONS" "@%ruserdata/%n/%n.nh361rc",
+             setenv "NETHACKOPTIONS" "@%ruserdata/%n/%n.nh360rc",
   # set up nethack mail stuff, assuming it's compiled with it...
              setenv "MAIL" "/mail/%n",
              setenv "SIMPLEMAIL" "1",
@@ -347,18 +346,18 @@ DEFINE {
 }
 
 DEFINE {
-  game_path = "/nh361/nethack"
-  game_name = "NetHack 3.6.1 (Wizard)"
-  short_name = "WZ361"
+  game_path = "/nh360/nethack"
+  game_name = "NetHack 3.6.0 (Wizard)"
+  short_name = "WZ360"
 
-  game_args = "/nh361/nethack", "-D", "-u", "%n"
+  game_args = "/nh360/nethack", "-D", "-u", "%n"
 
   spooldir = "/mail/"
-  rc_template = "/dgl-default-rcfile.nh361"
+  rc_template = "/dgl-default-rcfile.nh360"
 
-  rc_fmt = "%ruserdata/%n/%n.nh361rc"
+  rc_fmt = "%ruserdata/%n/%n.nh360rc"
 
-  inprogressdir = "%rinprogress-wz361/"
+  inprogressdir = "%rinprogress-wz360/"
 
 # The place where ttyrecs are stored for this game.
 # If this is not defined, ttyrecs are not saved for this game.
@@ -367,27 +366,14 @@ DEFINE {
 
 
   # back up savefile
-  commands = cp "/nh361/var/save/%u%n.gz" "/nh361/var/save/%u%n.gz.bak",
+  commands = cp "/nh360/var/save/%u%n.gz" "/nh360/var/save/%u%n.gz.bak",
   # set NETHACKOPTIONS to point to the rcfile
-             setenv "NETHACKOPTIONS" "@%ruserdata/%n/%n.nh361rc",
+             setenv "NETHACKOPTIONS" "@%ruserdata/%n/%n.nh360rc",
   # set up nethack mail stuff, assuming it's compiled with it...
              setenv "MAIL" "/mail/%n",
              setenv "SIMPLEMAIL" "1",
   # don't let the mail file grow
              unlink "/mail/%n"
-}
-
-DEFINE {
-  game_path = "/bin/halloffame"
-  game_name = "Hall of Fame"
-  short_name = "HOF"
-
-  game_args = "/bin/halloffame", "/"
-
-  spooldir = "/mail/"
-  rc_template = "/dgl-default-rcfile.nh361"
-  rc_fmt = "%ruserdata/%n/%n.nh361rc"
-  inprogressdir = "%rinprogress-nh361/"
 }
 
 #

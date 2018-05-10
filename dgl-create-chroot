@@ -21,9 +21,9 @@ COMPRESSBIN="/bin/gzip"
 # fixed data to copy (leave blank to skip)
 #NH_PLAYGROUND_FIXED="/home/paxed/hacking/coding/nethacksource/nethack-3.4.3-nao/nh360/"
 # HACKDIR from include/config.h; aka nethack subdir inside chroot
-NHSUBDIR="/nh360/"
+NHSUBDIR="/nh361/"
 # VAR_PLAYGROUND from include/unixconf.h
-NH_VAR_PLAYGROUND="/nh360/var/"
+NH_VAR_PLAYGROUND="/nh361/var/"
 
 # only define this if dgl was configured with --enable-sqlite
 SQLITE_DBFILE="/dgldir/dgamelaunch.db"
@@ -84,7 +84,10 @@ DGLFILE="dgamelaunch.`date +%Y%m%d`"
 
 echo "Setting up chroot in $CHROOT"
 
-LIBS="`findlibs dgamelaunch /usr/bin/nano`"
+HOFDIR=$(pwd)/../halloffame
+HALLOFFAME=$HOFDIR/halloffame
+
+LIBS="`findlibs dgamelaunch /usr/bin/nano $HALLOFFAME`"
 
 mkdir -p "$CHROOT" || errorexit "Cannot create chroot"
 cd "$CHROOT"
@@ -93,14 +96,18 @@ chown "$USRGRP" dgldir mail
 cp "$CURDIR/dgamelaunch" "$DGLFILE"
 ln -s "$DGLFILE" dgamelaunch
 
+cp "$HALLOFFAME" "$CHROOT/bin"
+cp "$HOFDIR/font.txt" "$CHROOT/"
+chown "$USRGRP" "$CHROOT/bin/halloffame"
+
 cp "/usr/bin/nano" "$CHROOT/bin"
 chown "$USRGRP" "$CHROOT/bin/nano"
 
-mkdir -p "$CHROOT/dgldir/inprogress-nh360"
-mkdir -p "$CHROOT/dgldir/inprogress-wz360"
+mkdir -p "$CHROOT/dgldir/inprogress-nh361"
+mkdir -p "$CHROOT/dgldir/inprogress-wz361"
 mkdir -p "$CHROOT/dgldir/userdata"
-chown "$USRGRP" "$CHROOT/dgldir/inprogress-nh360"
-chown "$USRGRP" "$CHROOT/dgldir/inprogress-wz360"
+chown "$USRGRP" "$CHROOT/dgldir/inprogress-nh361"
+chown "$USRGRP" "$CHROOT/dgldir/inprogress-wz361"
 chown "$USRGRP" "$CHROOT/dgldir/userdata"
 
 
@@ -152,9 +159,9 @@ cp "$CURDIR/examples/dgl_menu_main_anon.txt" .
 cp "$CURDIR/examples/dgl_menu_main_user.txt" .
 cp "$CURDIR/examples/dgl_menu_watchmenu_help.txt" .
 cp "$CURDIR/examples/dgl-banner" .
-cp "$CURDIR/dgl-default-rcfile" "dgl-default-rcfile.nh360"
-cp "$CURDIR/dgl-default-rcfile" "dgl-default-rcfile.wz360"
-chmod go+r dgl_menu_main_anon.txt dgl_menu_main_user.txt dgl-banner dgl-default-rcfile.nh360 dgl-default-rcfile.wz360
+cp "$CURDIR/dgl-default-rcfile" "dgl-default-rcfile.nh361"
+cp "$CURDIR/dgl-default-rcfile" "dgl-default-rcfile.wz361"
+chmod go+r dgl_menu_main_anon.txt dgl_menu_main_user.txt dgl-banner dgl-default-rcfile.nh361 dgl-default-rcfile.wz361
 
 NHSUBDIR="`echo ${NHSUBDIR%/}`"
 NHSUBDIR="`echo ${NHSUBDIR#/}`"
