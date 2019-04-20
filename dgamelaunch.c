@@ -95,8 +95,8 @@ extern int yyparse ();
 #include <mysql/mysql.h>
 
 #define SQL_SERVER    "127.0.0.1" // by ip, to force tcp sockets
-#define SQL_USER    "root"
-#define SQL_PASS    ""
+#define SQL_USER    "nh"
+#define SQL_PASS    "nh12"
 #define SQL_DATABASE  "nhtour"
 
 static MYSQL *conn;
