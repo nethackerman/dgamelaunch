@@ -13,11 +13,11 @@
 CHROOT="$HOME/nethack_server"
 rm -fr $CHROOT
 # the user & group from dgamelaunch config file.
-USRGRP="$USER:users"
+USRGRP="$USER:$USER"
 # COMPRESS from include/config.h; the compression binary to copy. leave blank to skip.
 COMPRESSBIN="/bin/gzip"
 # nethack binary to copy into chroot (leave blank to skip)
-#NETHACKBIN="/home/paxed/hacking/coding/nethacksource/nethack-3.4.3-nao/nh360/nethack.360-nao"
+NETHACKBIN="$HOME/nethack/src/nethack"
 # fixed data to copy (leave blank to skip)
 #NH_PLAYGROUND_FIXED="/home/paxed/hacking/coding/nethacksource/nethack-3.4.3-nao/nh360/"
 # HACKDIR from include/config.h; aka nethack subdir inside chroot
@@ -27,6 +27,8 @@ NH_VAR_PLAYGROUND="/nh361/var/"
 
 # only define this if dgl was configured with --enable-sqlite
 SQLITE_DBFILE="/dgldir/dgamelaunch.db"
+
+NANOBIN=`which nano`
 
 # END OF CONFIG
 ##############################################################################
@@ -87,7 +89,7 @@ echo "Setting up chroot in $CHROOT"
 HOFDIR=$(pwd)/../halloffame
 HALLOFFAME=$HOFDIR/halloffame
 
-LIBS="`findlibs dgamelaunch /usr/bin/nano $HALLOFFAME`"
+LIBS="`findlibs dgamelaunch $NANOBIN $HALLOFFAME`"
 
 mkdir -p "$CHROOT" || errorexit "Cannot create chroot"
 cd "$CHROOT"
@@ -100,7 +102,7 @@ cp "$HALLOFFAME" "$CHROOT/bin"
 cp "$HOFDIR/font.txt" "$CHROOT/"
 chown "$USRGRP" "$CHROOT/bin/halloffame"
 
-cp "/usr/bin/nano" "$CHROOT/bin"
+cp "$NANOBIN" "$CHROOT/bin"
 chown "$USRGRP" "$CHROOT/bin/nano"
 
 mkdir -p "$CHROOT/dgldir/inprogress-nh361"
